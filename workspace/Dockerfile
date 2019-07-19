@@ -37,9 +37,29 @@ ENV PUID ${PUID}
 ARG PGID=1000
 ENV PGID ${PGID}
 
+COPY ./get-pip.py /root/get-pip.py 
+COPY ./ss.sh /root/ss.sh
+
+
 # always run apt update when start and after add new source list, then clean up at end.
 RUN set -xe; \
+    #----------容器国外代理下载-------------------------------------------#
+    # chmod -R 777 /root/ss.sh && \
+    # ./ /root/ss.sh && \   
+    python3 /root/get-pip.py && \
+    pip install genpac && \
+    genpac --proxy="SOCKS5 10.0.75.1:2288" \
+    --gfwlist-proxy="SOCKS5 10.0.75.1:2288" -o autoproxy.pac \
+    --gfwlist-url="https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt"  && \
+    echo "export http_proxy=http://10.0.75.1:2288; \
+    export https_proxy=http://10.0.75.1:2288; \
+    export ftp_proxy=http://10.0.75.1:2288" >> /etc/profile && \ 
+    . /etc/profile && \ 
+    #---------------------------------------------------------------#
+    # sed -i s@/archive.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list && \
+    # sed -i s@/security.ubuntu.com/@/mirrors.aliyun.com/@g /etc/apt/sources.list && \
     apt-get update -yqq && \
+    apt-get upgrade -yqq && \
     pecl channel-update pecl.php.net && \
     groupadd -g ${PGID} laradock && \
     useradd -u ${PUID} -g laradock -m laradock -G docker_env && \
@@ -885,6 +905,8 @@ RUN if [ ${INSTALL_PYTHON} = true ]; then \
   apt-get -y install python python-pip python-dev build-essential  \
   && python -m pip install --upgrade pip  \
   && python -m pip install --upgrade virtualenv \
+#-------------------------------------------------------------------------#
+  pip3 install numpy && \ 
 ;fi
 
 ###########################################################################

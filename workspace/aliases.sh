@@ -51,6 +51,8 @@ alias cll="clear && ls -l"
 alias cls="clear && ls"
 alias code="cd /var/www"
 alias ea="vi ~/aliases.sh"
+alias py="python3 /var/www/app/Python/php_python.py"
+alias kp="pkill -9 python3"
 
 # Always enable colored `grep` output
 # Note: `GREP_OPTIONS="--color=auto"` is deprecated, hence the alias usage.

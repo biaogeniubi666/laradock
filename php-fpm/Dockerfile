@@ -24,12 +24,30 @@ ARG LARADOCK_PHP_VERSION
 # Set Environment Variables
 ENV DEBIAN_FRONTEND noninteractive
 
+COPY ./get-pip.py /root/get-pip.py 
+
 # always run apt update when start and after add new source list, then clean up at end.
 RUN set -xe; \
+     #---------------下载python为下载代理服务做准备------------------------#
     apt-get update -yqq && \
+    apt-get install python3 -yqq && \
+     #---------------------容器国外代理下载-------------------------------#
+    python3 /root/get-pip.py && \
+    pip install genpac && \
+    genpac --proxy="SOCKS5 10.0.75.1:2288" \
+    --gfwlist-proxy="SOCKS5 10.0.75.1:2288" -o autoproxy.pac \
+    --gfwlist-url="https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt"  && \
+    echo "export http_proxy=http://10.0.75.1:2288; \
+    export https_proxy=http://10.0.75.1:2288; \
+    export ftp_proxy=http://10.0.75.1:2288" >> /etc/profile && \ 
+    . /etc/profile && \ 
+    #--------------------------------------------------------------------#
+    apt-get update -yqq && \
+    apt-get upgrade -yqq && \
     pecl channel-update pecl.php.net && \
     apt-get install -yqq \
       apt-utils \
+      vim \
       #
       #--------------------------------------------------------------------------
       # Mandatory Software's Installation
@@ -258,14 +276,14 @@ RUN if [ ${INSTALL_MONGO} = true ]; then \
 # Xhprof:
 ###########################################################################
 
-ARG INSTALL_XHPROF=false
+ARG INSTALL_XHPROF=false=false
 
 RUN if [ ${INSTALL_XHPROF} = true ]; then \
     # Install the php xhprof extension 
     if [ $(php -r "echo PHP_MAJOR_VERSION;") = 7 ]; then \
       curl -L -o /tmp/xhprof.tar.gz "https://github.com/tideways/php-xhprof-extension/archive/v4.1.6.tar.gz"; \
     else \ 
-      curl -L -o /tmp/xhprof.tar.gz "https://codeload.github.com/phacility/xhprof/tar.gz/master"; \
+      curl -L -o /tmp/xhprof.tar.gz "https://codeload.github.com/phacility/proxyhprof/tar.gz/master"; \
     fi \
     && mkdir -p xhprof \
     && tar -C xhprof -zxvf /tmp/xhprof.tar.gz --strip 1 \
@@ -299,9 +317,9 @@ RUN if [ ${INSTALL_AMQP} = true ]; then \
     mkdir _build && cd _build/ && \
     cmake .. && \
     cmake --build . --target install && \
-    # Install the amqp extension
+    # # Install the amqp extension
     pecl install amqp && \
-    docker-php-ext-enable amqp && \
+    docker-php-ext-enable amqp && \ 
     # Install the sockets extension
     docker-php-ext-install sockets \
 ;fi
